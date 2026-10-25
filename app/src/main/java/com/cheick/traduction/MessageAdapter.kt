@@ -17,10 +17,13 @@ data class Message(
 )
 
 class MessageAdapter(
-    private val onClick: (Message) -> Unit,
+    private val onReplay: (Message) -> Unit,
+    private val onShare: (Message) -> Unit,
 ) : RecyclerView.Adapter<MessageAdapter.Holder>() {
 
     private val items = mutableListOf<Message>()
+
+    val messages: List<Message> get() = items
 
     class Holder(val binding: ItemMessageBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -56,6 +59,8 @@ class MessageAdapter(
         b.bubble.layoutParams = (b.bubble.layoutParams as FrameLayout.LayoutParams).apply {
             gravity = if (message.fromMe) Gravity.END else Gravity.START
         }
-        b.bubble.setOnClickListener { onClick(message) }
+        b.bubble.setOnClickListener { onReplay(message) }
+        b.replayButton.setOnClickListener { onReplay(message) }
+        b.shareButton.setOnClickListener { onShare(message) }
     }
 }

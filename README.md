@@ -24,7 +24,9 @@ Ensuite la traduction fonctionne même **hors ligne**.
 | **Interlocuteur** (vert) | Il/elle parle, vous entendez la traduction dans votre langue |
 | **Mode conversation automatique** | Le micro passe tout seul de l'un à l'autre après chaque traduction |
 | ⇄ | Inverser les deux langues |
-| Toucher une bulle | Réécouter la traduction |
+| Toucher une bulle / 🔊 | Réécouter la traduction |
+| Partager (icône sur une bulle) | Envoyer la traduction en **message vocal** ou en texte via WhatsApp, SMS, e-mail… |
+| **Partager** (en haut) | Envoyer toute la conversation en texte |
 
 Appuyez une deuxième fois sur le micro actif pour terminer la phrase tout de suite.
 

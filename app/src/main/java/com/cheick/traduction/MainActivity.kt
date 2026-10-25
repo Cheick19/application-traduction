@@ -1,6 +1,7 @@
 package com.cheick.traduction
 
 import android.Manifest
+import android.content.ClipData
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -17,14 +18,17 @@ import android.widget.ArrayAdapter
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.cheick.traduction.databinding.ActivityMainBinding
 import com.google.android.gms.tasks.Task
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.nl.translate.Translation
 import com.google.mlkit.nl.translate.Translator
 import com.google.mlkit.nl.translate.TranslatorOptions
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
@@ -44,6 +48,8 @@ class MainActivity : AppCompatActivity() {
 
     private val translators = mutableMapOf<String, Translator>()
 
+    private lateinit var voiceExporter: VoiceExporter
+
     private val prefs by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
 
     private val myLanguage get() = Language.ALL[binding.myLanguage.selectedItemPosition]
@@ -60,7 +66,11 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        adapter = MessageAdapter { message -> speak(message.translation, message.target, null) }
+        voiceExporter = VoiceExporter(this)
+        adapter = MessageAdapter(
+            onReplay = { message -> speak(message.translation, message.target, null) },
+            onShare = { message -> shareMessage(message) },
+        )
         binding.messages.layoutManager = LinearLayoutManager(this).apply { stackFromEnd = true }
         binding.messages.adapter = adapter
 
@@ -70,6 +80,7 @@ class MainActivity : AppCompatActivity() {
         binding.meButton.setOnClickListener { onMicPressed(Speaker.ME) }
         binding.otherButton.setOnClickListener { onMicPressed(Speaker.OTHER) }
         binding.clearButton.setOnClickListener { adapter.clear() }
+        binding.shareConversationButton.setOnClickListener { shareConversation() }
         binding.swapButton.setOnClickListener {
             val my = binding.myLanguage.selectedItemPosition
             binding.myLanguage.setSelection(binding.otherLanguage.selectedItemPosition)
@@ -332,6 +343,63 @@ class MainActivity : AppCompatActivity() {
 
     // endregion
 
+    // region Sharing (WhatsApp, SMS, e-mail…)
+
+    private fun shareMessage(message: Message) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.share_title)
+            .setItems(arrayOf(getString(R.string.share_voice), getString(R.string.share_text))) { _, which ->
+                if (which == 0) shareVoice(message) else shareText(message.translation)
+            }
+            .show()
+    }
+
+    private fun shareVoice(message: Message) {
+        setStatus(getString(R.string.preparing_voice))
+        voiceExporter.export(message.translation, message.target) { file ->
+            if (file == null) {
+                setStatus(getString(R.string.voice_error))
+            } else {
+                setStatus(getString(R.string.tap_to_speak))
+                shareAudioFile(file)
+            }
+        }
+    }
+
+    private fun shareAudioFile(file: File) {
+        val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = if (file.extension == "m4a") "audio/mp4" else "audio/wav"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            clipData = ClipData.newRawUri(file.name, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(Intent.createChooser(intent, getString(R.string.share_title)))
+    }
+
+    private fun shareText(text: String) {
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, text)
+        }
+        startActivity(Intent.createChooser(intent, getString(R.string.share_title)))
+    }
+
+    private fun shareConversation() {
+        val messages = adapter.messages
+        if (messages.isEmpty()) {
+            setStatus(getString(R.string.nothing_to_share))
+            return
+        }
+        val transcript = messages.joinToString("\n\n") { m ->
+            val who = getString(if (m.fromMe) R.string.me else R.string.other)
+            "$who (${m.source.label}) : ${m.original}\n→ (${m.target.label}) : ${m.translation}"
+        }
+        shareText(transcript)
+    }
+
+    // endregion
+
     private fun speakerName(speaker: Speaker) =
         getString(if (speaker == Speaker.ME) R.string.me else R.string.other)
 
@@ -361,6 +429,7 @@ class MainActivity : AppCompatActivity() {
         recognizer = null
         tts?.shutdown()
         tts = null
+        voiceExporter.shutdown()
         super.onDestroy()
     }
 }

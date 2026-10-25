@@ -97,6 +97,13 @@
             android:textColor="@color/text_primary" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/shareConversationButton"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/share" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/clearButton"
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"

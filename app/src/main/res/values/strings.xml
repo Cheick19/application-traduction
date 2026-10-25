@@ -18,4 +18,13 @@
     <string name="clear">Effacer</string>
     <string name="stop">Arrêter</string>
     <string name="tts_missing">Voix indisponible pour %1$s : installez-la dans Paramètres › Synthèse vocale.</string>
+    <string name="share">Partager</string>
+    <string name="replay">Réécouter</string>
+    <string name="share_title">Partager la traduction</string>
+    <string name="share_voice">🎙️ Envoyer en message vocal</string>
+    <string name="share_text">💬 Envoyer le texte</string>
+    <string name="share_conversation_title">Partager la conversation</string>
+    <string name="preparing_voice">Préparation du message vocal…</string>
+    <string name="voice_error">Impossible de créer le message vocal pour cette langue.</string>
+    <string name="nothing_to_share">Aucune conversation à partager.</string>
 </resources>
