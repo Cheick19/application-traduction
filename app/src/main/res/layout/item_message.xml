@@ -47,6 +47,14 @@
             android:orientation="horizontal">
 
             <ImageButton
+                android:id="@+id/editButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/correct"
+                android:src="@drawable/ic_edit" />
+
+            <ImageButton
                 android:id="@+id/replayButton"
                 android:layout_width="40dp"
                 android:layout_height="40dp"

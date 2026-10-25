@@ -15,7 +15,6 @@
     <string name="no_recognizer">Aucun service de reconnaissance vocale. Installez/activez l\'application Google.</string>
     <string name="not_understood">Je n\'ai pas compris, réessayez.</string>
     <string name="swap">Inverser</string>
-    <string name="clear">Effacer</string>
     <string name="stop">Arrêter</string>
     <string name="tts_missing">Voix indisponible pour %1$s : installez-la dans Paramètres › Synthèse vocale.</string>
     <string name="share">Partager</string>
@@ -27,4 +26,27 @@
     <string name="preparing_voice">Préparation du message vocal…</string>
     <string name="voice_error">Impossible de créer le message vocal pour cette langue.</string>
     <string name="nothing_to_share">Aucune conversation à partager.</string>
+    <string name="correct">Corriger</string>
+    <string name="new_conversation">Nouvelle discussion</string>
+    <string name="new_conversation_started">Nouvelle discussion. Appuyez sur un micro pour parler</string>
+    <string name="history">Discussions enregistrées</string>
+    <string name="no_history">Aucune discussion enregistrée pour le moment.</string>
+    <string name="open">Ouvrir</string>
+    <string name="delete">Supprimer</string>
+    <string name="cancel">Annuler</string>
+    <string name="save">Enregistrer</string>
+    <string name="deleted">Discussion supprimée</string>
+    <string name="memory">Ce que l\'appli a appris</string>
+    <string name="memory_empty">L\'appli n\'a encore rien appris.\n\n• Touchez ✏️ sur une traduction pour la corriger : la même phrase sera ensuite traduite comme vous le souhaitez.\n• Menu › « Ajouter un mot / nom » : pour les prénoms, lieux ou mots que vous voulez traduire à votre façon.</string>
+    <string name="memory_delete">Oublier cet élément ?</string>
+    <string name="add_term">Ajouter un mot / nom</string>
+    <string name="term_in">En %1$s</string>
+    <string name="term_saved">Mot enregistré : l\'appli l\'utilisera désormais</string>
+    <string name="correction_saved">Correction enregistrée : l\'appli s\'en souviendra</string>
+    <string name="correct_title">Corriger la traduction</string>
+    <string name="voice_speed">Vitesse de la voix</string>
+    <string name="speed_normal">Normale</string>
+    <string name="speed_fast">Rapide</string>
+    <string name="speed_very_fast">Très rapide</string>
+    <string name="conversation_title">Discussion du %1$s</string>
 </resources>

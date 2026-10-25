@@ -8,22 +8,13 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.cheick.traduction.databinding.ItemMessageBinding
 
-data class Message(
-    val fromMe: Boolean,
-    val original: String,
-    val translation: String,
-    val source: Language,
-    val target: Language,
-)
-
 class MessageAdapter(
     private val onReplay: (Message) -> Unit,
     private val onShare: (Message) -> Unit,
+    private val onEdit: (Int, Message) -> Unit,
 ) : RecyclerView.Adapter<MessageAdapter.Holder>() {
 
     private val items = mutableListOf<Message>()
-
-    val messages: List<Message> get() = items
 
     class Holder(val binding: ItemMessageBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -32,10 +23,16 @@ class MessageAdapter(
         notifyItemInserted(items.size - 1)
     }
 
-    fun clear() {
-        val count = items.size
+    fun update(position: Int, message: Message) {
+        items[position] = message
+        notifyItemChanged(position)
+    }
+
+    @Suppress("NotifyDataSetChanged")
+    fun setAll(messages: List<Message>) {
         items.clear()
-        notifyItemRangeRemoved(0, count)
+        items.addAll(messages)
+        notifyDataSetChanged()
     }
 
     override fun getItemCount() = items.size
@@ -62,5 +59,9 @@ class MessageAdapter(
         b.bubble.setOnClickListener { onReplay(message) }
         b.replayButton.setOnClickListener { onReplay(message) }
         b.shareButton.setOnClickListener { onShare(message) }
+        b.editButton.setOnClickListener {
+            val index = holder.bindingAdapterPosition
+            if (index != RecyclerView.NO_POSITION) onEdit(index, items[index])
+        }
     }
 }

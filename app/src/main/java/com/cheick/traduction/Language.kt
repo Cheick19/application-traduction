@@ -11,6 +11,8 @@ data class Language(val label: String, val mlKitCode: String, val speechTag: Str
     val locale: Locale get() = Locale.forLanguageTag(speechTag)
 
     companion object {
+        fun byCode(code: String) = ALL.firstOrNull { it.mlKitCode == code }
+
         val ALL = listOf(
             Language("Français", TranslateLanguage.FRENCH, "fr-FR"),
             Language("Anglais", TranslateLanguage.ENGLISH, "en-US"),

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_new"
+        android:icon="@drawable/ic_add"
+        android:title="@string/new_conversation"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/action_history"
+        android:icon="@drawable/ic_history"
+        android:title="@string/history"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/action_share"
+        android:title="@string/share_conversation_title"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_memory"
+        android:title="@string/memory"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_add_term"
+        android:title="@string/add_term"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_speed"
+        android:title="@string/voice_speed"
+        app:showAsAction="never" />
+</menu>

@@ -26,9 +26,27 @@ Ensuite la traduction fonctionne même **hors ligne**.
 | ⇄ | Inverser les deux langues |
 | Toucher une bulle / 🔊 | Réécouter la traduction |
 | Partager (icône sur une bulle) | Envoyer la traduction en **message vocal** ou en texte via WhatsApp, SMS, e-mail… |
-| **Partager** (en haut) | Envoyer toute la conversation en texte |
+| ✏️ sur une bulle | Corriger une traduction : l'appli s'en souvient pour la suite |
+| ＋ (en haut) | Nouvelle discussion (l'ancienne reste enregistrée) |
+| 🕘 (en haut) | Discussions enregistrées : ouvrir, partager ou supprimer |
+| Menu ⋮ | Partager la discussion, ce que l'appli a appris, ajouter un mot / nom, vitesse de la voix |
 
 Appuyez une deuxième fois sur le micro actif pour terminer la phrase tout de suite.
+
+## Rapidité
+
+- La traduction est calculée **pendant que la personne parle** : elle est prête dès la fin de la phrase.
+- L'écoute s'arrête environ 0,7 s après la fin de la phrase (ou touchez à nouveau le micro).
+- La reconnaissance hors ligne est utilisée quand elle est installée (plus rapide). Pour l'installer :
+  *Paramètres › Google › Reconnaissance vocale hors connexion* (le nom varie selon le téléphone).
+- Une voix est préparée à l'avance pour chaque langue ; la vitesse de la voix se règle dans le menu.
+
+## Ce que l'appli apprend
+
+Tout reste sur le téléphone :
+- **Corrections** : corrigez une traduction avec ✏️ ; la même phrase sera ensuite traduite comme vous l'avez écrite.
+- **Vocabulaire** : ajoutez des prénoms, lieux ou mots (menu › « Ajouter un mot / nom ») ; ils sont utilisés dans les
+  traductions et aident la reconnaissance vocale (Android 13 et plus).
 
 ## Conseils
 
