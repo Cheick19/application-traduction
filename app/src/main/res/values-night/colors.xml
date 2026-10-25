@@ -1,0 +1,9 @@
+<resources>
+    <color name="me_color">#64B5F6</color>
+    <color name="other_color">#81C784</color>
+    <color name="bubble_me">#1A2B3C</color>
+    <color name="bubble_other">#1B2E1E</color>
+    <color name="text_primary">#EDEDED</color>
+    <color name="text_secondary">#A8ABAF</color>
+    <color name="background">#121212</color>
+</resources>

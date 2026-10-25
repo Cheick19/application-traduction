@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">Traduction Instantanée</string>
+    <string name="me">Moi</string>
+    <string name="other">Interlocuteur</string>
+    <string name="my_language">Ma langue</string>
+    <string name="other_language">Sa langue</string>
+    <string name="conversation_mode">Mode conversation automatique</string>
+    <string name="tap_to_speak">Appuyez sur un micro pour parler</string>
+    <string name="listening">J\'écoute…</string>
+    <string name="translating">Traduction…</string>
+    <string name="downloading_models">Téléchargement des langues (une seule fois)…</string>
+    <string name="models_ready">Prêt ! Appuyez sur un micro pour parler</string>
+    <string name="models_error">Échec du téléchargement des langues. Vérifiez Internet.</string>
+    <string name="permission_needed">L\'accès au micro est nécessaire pour la traduction.</string>
+    <string name="no_recognizer">Aucun service de reconnaissance vocale. Installez/activez l\'application Google.</string>
+    <string name="not_understood">Je n\'ai pas compris, réessayez.</string>
+    <string name="swap">Inverser</string>
+    <string name="clear">Effacer</string>
+    <string name="stop">Arrêter</string>
+    <string name="tts_missing">Voix indisponible pour %1$s : installez-la dans Paramètres › Synthèse vocale.</string>
+</resources>

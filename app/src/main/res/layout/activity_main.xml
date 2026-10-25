@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    android:keepScreenOn="true"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/my_language"
+                android:textColor="@color/me_color"
+                android:textStyle="bold" />
+
+            <Spinner
+                android:id="@+id/myLanguage"
+                android:layout_width="match_parent"
+                android:layout_height="48dp" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/swapButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/swap"
+            android:src="@android:drawable/ic_popup_sync"
+            app:tint="@color/text_secondary" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/other_language"
+                android:textColor="@color/other_color"
+                android:textStyle="bold" />
+
+            <Spinner
+                android:id="@+id/otherLanguage"
+                android:layout_width="match_parent"
+                android:layout_height="48dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/messages"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingBottom="8dp" />
+
+    <TextView
+        android:id="@+id/status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:minHeight="48dp"
+        android:padding="6dp"
+        android:text="@string/tap_to_speak"
+        android:textColor="@color/text_secondary"
+        android:textSize="16sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/conversationMode"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/conversation_mode"
+            android:textColor="@color/text_primary" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/clearButton"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/clear" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/meButton"
+            android:layout_width="0dp"
+            android:layout_height="96dp"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:backgroundTint="@color/me_color"
+            android:text="@string/me"
+            android:textSize="18sp"
+            app:cornerRadius="24dp"
+            app:icon="@drawable/ic_mic"
+            app:iconGravity="textStart"
+            app:iconSize="32dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/otherButton"
+            android:layout_width="0dp"
+            android:layout_height="96dp"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:backgroundTint="@color/other_color"
+            android:text="@string/other"
+            android:textSize="18sp"
+            app:cornerRadius="24dp"
+            app:icon="@drawable/ic_mic"
+            app:iconGravity="textStart"
+            app:iconSize="32dp" />
+    </LinearLayout>
+</LinearLayout>
