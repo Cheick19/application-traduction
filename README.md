@@ -36,9 +36,11 @@ Appuyez une deuxième fois sur le micro actif pour terminer la phrase tout de su
 ## Rapidité
 
 - La traduction est calculée **pendant que la personne parle** : elle est prête dès la fin de la phrase.
-- L'écoute s'arrête environ 0,7 s après la fin de la phrase (ou touchez à nouveau le micro).
-- La reconnaissance hors ligne est utilisée quand elle est installée (plus rapide). Pour l'installer :
-  *Paramètres › Google › Reconnaissance vocale hors connexion* (le nom varie selon le téléphone).
+- Les petites pauses ne coupent plus la phrase : l'appli continue d'écouter et n'envoie qu'après une vraie pause
+  (menu › *Fin de phrase* : 1,5 s, 3 s, ou **manuel** — envoi seulement quand vous touchez le micro).
+- Touchez le micro actif (« ✓ Toucher pour envoyer ») pour envoyer immédiatement.
+- Menu › *Reconnaissance vocale* : **Précise** (par défaut, Internet, meilleure avec du bruit) ou **Rapide** (hors ligne si
+  installée : *Paramètres › Google › Reconnaissance vocale hors connexion*).
 - Une voix est préparée à l'avance pour chaque langue ; la vitesse de la voix se règle dans le menu.
 
 ## Ce que l'appli apprend

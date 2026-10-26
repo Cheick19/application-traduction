@@ -24,6 +24,14 @@
         android:title="@string/add_term"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_end_mode"
+        android:title="@string/end_of_sentence"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_recognition"
+        android:title="@string/recognition"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_speed"
         android:title="@string/voice_speed"
         app:showAsAction="never" />

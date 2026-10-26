@@ -38,6 +38,11 @@ import java.util.Date
 
 class MainActivity : AppCompatActivity() {
 
+    companion object {
+        /** Microphone level (dB) above which the room is considered noisy. */
+        private const val NOISY_LEVEL = 8f
+    }
+
     private enum class Speaker { ME, OTHER }
 
     private lateinit var binding: ActivityMainBinding
@@ -130,6 +135,8 @@ class MainActivity : AppCompatActivity() {
                 R.id.action_memory -> showMemory()
                 R.id.action_add_term -> addTerm()
                 R.id.action_speed -> chooseVoiceSpeed()
+                R.id.action_end_mode -> chooseEndMode()
+                R.id.action_recognition -> chooseRecognition()
             }
             true
         }
@@ -318,7 +325,7 @@ class MainActivity : AppCompatActivity() {
                     .putInt("my", binding.myLanguage.selectedItemPosition)
                     .putInt("other", binding.otherLanguage.selectedItemPosition)
                     .apply()
-                updateButtonLabels()
+                updateButtons()
                 myVoice.prepare(myLanguage)
                 otherVoice.prepare(otherLanguage)
                 prepareModels()
@@ -331,11 +338,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun indexOf(code: String) = Language.ALL.indexOfFirst { it.mlKitCode == code }.coerceAtLeast(0)
-
-    private fun updateButtonLabels() {
-        binding.meButton.text = "${getString(R.string.me)}\n${myLanguage.label}"
-        binding.otherButton.text = "${getString(R.string.other)}\n${otherLanguage.label}"
-    }
 
     private fun pairKey(source: Language, target: Language) = "${source.mlKitCode}>${target.mlKitCode}"
 
@@ -416,10 +418,28 @@ class MainActivity : AppCompatActivity() {
 
     // region Speech recognition
 
+    /** When a turn is sent for translation. */
+    private enum class EndMode(val pauseMs: Long) { SHORT_PAUSE(1500), LONG_PAUSE(3000), MANUAL(0) }
+
+    private val endMode: EndMode
+        get() = EndMode.entries.getOrElse(prefs.getInt("endMode", 0)) { EndMode.SHORT_PAUSE }
+
+    /** Accurate (online) recognition copes much better with background noise than the offline one. */
+    private val preciseRecognition: Boolean get() = prefs.getBoolean("precise", true)
+
+    // A turn is made of several recognizer sessions: Android stops listening at every short pause,
+    // so the pieces are stitched together until the person has really finished.
+    private val segments = mutableListOf<String>()
+    private var currentPartial = ""
+    private var loudestLevel = 0f
+    private val finishRunnable = Runnable { finishTurn() }
+
+    private fun turnText() = (segments + currentPartial).filter { it.isNotBlank() }.joinToString(" ")
+
     private fun onMicPressed(speaker: Speaker) {
         if (listeningFor == speaker) {
-            // Second tap: finish the sentence now.
-            recognizer?.stopListening()
+            // Tap on the active mic: send what has been said now.
+            finishTurn()
         } else {
             startListening(speaker)
         }
@@ -439,13 +459,29 @@ class MainActivity : AppCompatActivity() {
         myVoice.stop()
         otherVoice.stop()
 
+        listeningFor = speaker
+        segments.clear()
+        partialResult = null
+        queuedPartial = null
+        updateButtons()
+        val language = languageOf(speaker)
+        val hint = getString(if (endMode == EndMode.MANUAL) R.string.tap_when_done else R.string.listening)
+        setStatus("🎤 ${speakerName(speaker)} (${language.label}) — $hint")
+        startSegment()
+    }
+
+    /** Starts (or restarts after a pause) the recognizer for the current turn. */
+    private fun startSegment() {
+        val speaker = listeningFor ?: return
         val sr = recognizer ?: SpeechRecognizer.createSpeechRecognizer(this).also {
             it.setRecognitionListener(recognitionListener)
             recognizer = it
         }
         sr.cancel()
+        currentPartial = ""
+        loudestLevel = 0f
 
-        val language = if (speaker == Speaker.ME) myLanguage else otherLanguage
+        val language = languageOf(speaker)
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, language.speechTag)
@@ -453,42 +489,61 @@ class MainActivity : AppCompatActivity() {
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
             putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, packageName)
-            // Stop listening quickly once the person has finished their sentence.
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 700L)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 500L)
-            // On-device recognition answers faster than the network when the language pack is installed.
-            if (language.speechTag !in noOfflineRecognition) putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+            // Ask the recognizer to tolerate pauses so fewer words are lost between sessions.
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2000L)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 1500L)
+            if (!preciseRecognition && language.speechTag !in noOfflineRecognition) {
+                putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+            }
             val hints = memory.hintsFor(language.mlKitCode)
             if (hints.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 putStringArrayListExtra(RecognizerIntent.EXTRA_BIASING_STRINGS, hints)
             }
         }
-        listeningFor = speaker
-        partialResult = null
-        queuedPartial = null
-        updateButtons()
-        setStatus("🎤 ${speakerName(speaker)} (${language.label}) — ${getString(R.string.listening)}")
         sr.startListening(intent)
+    }
+
+    /** Sends everything said during the turn for translation. */
+    private fun finishTurn() {
+        val speaker = listeningFor ?: return
+        handler.removeCallbacks(finishRunnable)
+        val text = turnText()
+        listeningFor = null
+        segments.clear()
+        currentPartial = ""
+        recognizer?.cancel()
+        updateButtons()
+        if (text.isBlank()) onNothingHeard(speaker) else handleSpeech(speaker, text)
     }
 
     private fun stopListening() {
         handler.removeCallbacksAndMessages(null)
         recognizer?.cancel()
         listeningFor = null
+        segments.clear()
+        currentPartial = ""
         updateButtons()
         setStatus(getString(R.string.tap_to_speak))
+    }
+
+    private fun showLiveText() {
+        val text = turnText()
+        if (text.isBlank()) return
+        val ready = partialResult?.takeIf { it.first == text }?.second
+        val hint = if (endMode == EndMode.MANUAL) "\n${getString(R.string.tap_when_done)}" else ""
+        setStatus((if (ready != null) "🎤 $text\n➜ $ready" else "🎤 $text") + hint)
     }
 
     private val recognitionListener = object : RecognitionListener {
         override fun onReadyForSpeech(params: Bundle?) = Unit
         override fun onBeginningOfSpeech() = Unit
         override fun onRmsChanged(rmsdB: Float) {
-            val active = if (listeningFor == Speaker.ME) binding.meButton else binding.otherButton
-            if (listeningFor != null) {
-                val scale = 1f + (rmsdB.coerceIn(0f, 10f) / 100f)
-                active.scaleX = scale
-                active.scaleY = scale
-            }
+            val speaker = listeningFor ?: return
+            loudestLevel = maxOf(loudestLevel, rmsdB)
+            val active = if (speaker == Speaker.ME) binding.meButton else binding.otherButton
+            val scale = 1f + (rmsdB.coerceIn(0f, 10f) / 100f)
+            active.scaleX = scale
+            active.scaleY = scale
         }
         override fun onBufferReceived(buffer: ByteArray?) = Unit
         override fun onEndOfSpeech() = Unit
@@ -498,45 +553,72 @@ class MainActivity : AppCompatActivity() {
             val speaker = listeningFor ?: return
             val text = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
             if (text.isNullOrBlank()) return
-            val ready = partialResult?.takeIf { it.first == text }?.second
-            setStatus(if (ready != null) "🎤 $text\n➜ $ready" else "🎤 $text")
-            translatePartial(speaker, text)
+            // The person is still talking: do not send yet.
+            handler.removeCallbacks(finishRunnable)
+            currentPartial = text
+            showLiveText()
+            translatePartial(speaker, turnText())
         }
 
         override fun onResults(results: Bundle?) {
             val speaker = listeningFor ?: return
-            listeningFor = null
-            updateButtons()
             val text = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
-            if (text.isNullOrBlank()) {
-                onNothingHeard(speaker)
-            } else {
-                handleSpeech(speaker, text)
+            currentPartial = ""
+            if (!text.isNullOrBlank()) {
+                segments += text
+                showLiveText()
+                translatePartial(speaker, turnText())
             }
+            continueTurn()
         }
 
         override fun onError(error: Int) {
             // ERROR_CLIENT is raised when a previous session is cancelled: ignore it.
             if (error == SpeechRecognizer.ERROR_CLIENT) return
             val speaker = listeningFor ?: return
-            listeningFor = null
-            updateButtons()
-            val language = if (speaker == Speaker.ME) myLanguage else otherLanguage
+            val language = languageOf(speaker)
             when (error) {
-                SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> onNothingHeard(speaker)
-                SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> handler.postDelayed({ startListening(speaker) }, 300)
-                SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> setStatus(getString(R.string.permission_needed))
+                SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> {
+                    if (segments.isEmpty() && loudestLevel > NOISY_LEVEL) setStatus(getString(R.string.too_noisy))
+                    // In automatic mode, a whole silent session means the sentence is over.
+                    if (endMode == EndMode.MANUAL) startSegment() else finishTurn()
+                }
+                SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> handler.postDelayed({ startSegment() }, 300)
+                SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> {
+                    listeningFor = null
+                    updateButtons()
+                    setStatus(getString(R.string.permission_needed))
+                }
                 SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED, SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE,
-                SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_SERVER ->
-                    if (language.speechTag !in noOfflineRecognition) {
+                SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_SERVER, SpeechRecognizer.ERROR_NETWORK_TIMEOUT ->
+                    if (!preciseRecognition && language.speechTag !in noOfflineRecognition) {
                         // The offline pack is missing: retry right away with the online service.
                         noOfflineRecognition += language.speechTag
-                        startListening(speaker)
+                        startSegment()
+                    } else if (segments.isNotEmpty()) {
+                        finishTurn()
                     } else {
+                        listeningFor = null
+                        updateButtons()
                         setStatus("${getString(R.string.not_understood)} (code $error)")
                     }
-                else -> setStatus("${getString(R.string.not_understood)} (code $error)")
+                else -> if (segments.isNotEmpty()) {
+                    finishTurn()
+                } else {
+                    listeningFor = null
+                    updateButtons()
+                    setStatus("${getString(R.string.not_understood)} (code $error)")
+                }
             }
+        }
+    }
+
+    /** A recognizer session ended at a pause: keep listening, and send only after a real pause. */
+    private fun continueTurn() {
+        startSegment()
+        if (endMode != EndMode.MANUAL && segments.isNotEmpty()) {
+            handler.removeCallbacks(finishRunnable)
+            handler.postDelayed(finishRunnable, endMode.pauseMs)
         }
     }
 
@@ -547,13 +629,13 @@ class MainActivity : AppCompatActivity() {
             return
         }
         partialInFlight = true
-        val source = if (speaker == Speaker.ME) myLanguage else otherLanguage
+        val source = languageOf(speaker)
         val target = if (speaker == Speaker.ME) otherLanguage else myLanguage
         translate(text, source, target).addOnCompleteListener { task ->
             partialInFlight = false
             if (task.isSuccessful && listeningFor == speaker) {
                 partialResult = text to task.result
-                setStatus("🎤 $text\n➜ ${task.result}")
+                showLiveText()
             }
             val next = queuedPartial
             queuedPartial = null
@@ -565,13 +647,13 @@ class MainActivity : AppCompatActivity() {
         if (binding.conversationMode.isChecked && isInForeground()) {
             // Keep waiting for the same person in conversation mode.
             handler.postDelayed({ startListening(speaker) }, 100)
-        } else {
+        } else if (binding.status.text.toString() != getString(R.string.too_noisy)) {
             setStatus(getString(R.string.not_understood))
         }
     }
 
     private fun handleSpeech(speaker: Speaker, text: String) {
-        val source = if (speaker == Speaker.ME) myLanguage else otherLanguage
+        val source = languageOf(speaker)
         val target = if (speaker == Speaker.ME) otherLanguage else myLanguage
         val onTranslated = { translated: String ->
             addMessage(Message(speaker == Speaker.ME, text, translated, source, target))
@@ -589,6 +671,30 @@ class MainActivity : AppCompatActivity() {
         translate(text, source, target)
             .addOnSuccessListener { onTranslated(it) }
             .addOnFailureListener { setStatus(getString(R.string.models_error)) }
+    }
+
+    private fun languageOf(speaker: Speaker) = if (speaker == Speaker.ME) myLanguage else otherLanguage
+
+    private fun chooseEndMode() {
+        val labels = arrayOf(getString(R.string.end_short), getString(R.string.end_long), getString(R.string.end_manual))
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.end_of_sentence)
+            .setSingleChoiceItems(labels, endMode.ordinal) { dialog, which ->
+                prefs.edit().putInt("endMode", which).apply()
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    private fun chooseRecognition() {
+        val labels = arrayOf(getString(R.string.recognition_precise), getString(R.string.recognition_fast))
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.recognition)
+            .setSingleChoiceItems(labels, if (preciseRecognition) 0 else 1) { dialog, which ->
+                prefs.edit().putBoolean("precise", which == 0).apply()
+                dialog.dismiss()
+            }
+            .show()
     }
 
     // endregion
@@ -691,6 +797,9 @@ class MainActivity : AppCompatActivity() {
     private fun isInForeground() = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
 
     private fun updateButtons() {
+        val send = getString(R.string.tap_to_send)
+        binding.meButton.text = "${getString(R.string.me)}\n${if (listeningFor == Speaker.ME) send else myLanguage.label}"
+        binding.otherButton.text = "${getString(R.string.other)}\n${if (listeningFor == Speaker.OTHER) send else otherLanguage.label}"
         binding.meButton.alpha = if (listeningFor == Speaker.OTHER) 0.4f else 1f
         binding.otherButton.alpha = if (listeningFor == Speaker.ME) 0.4f else 1f
         if (listeningFor == null) {

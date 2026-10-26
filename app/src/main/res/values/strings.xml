@@ -49,4 +49,14 @@
     <string name="speed_fast">Rapide</string>
     <string name="speed_very_fast">Très rapide</string>
     <string name="conversation_title">Discussion du %1$s</string>
+    <string name="tap_to_send">✓ Toucher pour envoyer</string>
+    <string name="tap_when_done">touchez le micro quand c\'est fini</string>
+    <string name="end_of_sentence">Fin de phrase</string>
+    <string name="end_short">Automatique : après une pause de 1,5 s</string>
+    <string name="end_long">Automatique : après une longue pause (3 s)</string>
+    <string name="end_manual">Manuelle : envoyer seulement quand je touche le micro</string>
+    <string name="recognition">Reconnaissance vocale</string>
+    <string name="recognition_precise">Précise – conseillée avec du bruit (Internet)</string>
+    <string name="recognition_fast">Rapide – hors ligne si disponible</string>
+    <string name="too_noisy">Il y a beaucoup de bruit : rapprochez le téléphone de la personne qui parle.</string>
 </resources>
