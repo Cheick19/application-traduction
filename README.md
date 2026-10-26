@@ -33,6 +33,18 @@ Ensuite la traduction fonctionne même **hors ligne**.
 
 Appuyez une deuxième fois sur le micro actif pour terminer la phrase tout de suite.
 
+## Mode appel (📞 en haut)
+
+Android interdit aux applications d'écouter un appel ; le mode appel utilise donc **un deuxième appareil** :
+
+1. Passez l'appel (téléphone ou WhatsApp) sur votre téléphone et activez le **haut-parleur**.
+2. Posez le deuxième appareil (vieux téléphone, tablette) à côté, avec l'appli en **mode appel**.
+3. L'interlocuteur parle : sa phrase traduite s'affiche en très grand (sans être lue, sauf si vous l'activez).
+4. Pour répondre, touchez **Moi** et parlez : la traduction est lue fort et votre téléphone l'envoie dans l'appel.
+   L'appli se remet ensuite toute seule à écouter l'interlocuteur.
+
+Le volume est mis au maximum pendant le mode appel et rétabli à la sortie. L'appel est enregistré comme une discussion.
+
 ## Rapidité
 
 - La traduction est calculée **pendant que la personne parle** : elle est prête dès la fin de la phrase.

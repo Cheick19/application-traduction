@@ -59,4 +59,12 @@
     <string name="recognition_precise">Précise – conseillée avec du bruit (Internet)</string>
     <string name="recognition_fast">Rapide – hors ligne si disponible</string>
     <string name="too_noisy">Il y a beaucoup de bruit : rapprochez le téléphone de la personne qui parle.</string>
+    <string name="call_mode">Mode appel</string>
+    <string name="call_mode_exit">Quitter le mode appel</string>
+    <string name="call_start">Démarrer</string>
+    <string name="call_guide">Android interdit aux applications d\'écouter un appel. Le mode appel utilise donc un deuxième appareil (vieux téléphone ou tablette) :\n\n1. Passez l\'appel (téléphone ou WhatsApp) sur votre téléphone et activez le haut-parleur.\n2. Posez CET appareil juste à côté, avec Traduction Instantanée en mode appel.\n3. Votre interlocuteur parle : sa phrase traduite s\'affiche ici en grand.\n4. Pour répondre, touchez « Moi », parlez en %1$s : la traduction est lue à voix haute et votre téléphone l\'envoie dans l\'appel.\n\nLe volume de cet appareil est mis au maximum pendant le mode appel.</string>
+    <string name="call_they_say">L\'interlocuteur dit (%1$s → %2$s) :</string>
+    <string name="call_waiting">En attente de votre interlocuteur…</string>
+    <string name="call_you_said">Vous (→ %1$s) : %2$s</string>
+    <string name="call_read_aloud">Lire aussi sa traduction à voix haute</string>
 </resources>

@@ -18,6 +18,7 @@
         app:title="@string/app_name" />
 
     <LinearLayout
+        android:id="@+id/languageRow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
@@ -80,6 +81,69 @@
         android:clipToPadding="false"
         android:paddingBottom="8dp" />
 
+    <LinearLayout
+        android:id="@+id/callPanel"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:paddingHorizontal="8dp"
+        android:paddingTop="8dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/callLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/other_color"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/callSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="4dp"
+            android:layout_weight="1"
+            android:autoSizeMaxTextSize="44sp"
+            android:autoSizeMinTextSize="18sp"
+            android:autoSizeTextType="uniform"
+            android:textColor="@color/text_primary"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/callOriginal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="3"
+            android:textColor="@color/text_secondary"
+            android:textSize="15sp"
+            android:textStyle="italic" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginVertical="10dp"
+            android:background="@color/text_secondary"
+            android:alpha="0.3" />
+
+        <TextView
+            android:id="@+id/callMine"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="3"
+            android:textColor="@color/me_color"
+            android:textSize="17sp" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/callReadAloud"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/call_read_aloud"
+            android:textColor="@color/text_primary" />
+    </LinearLayout>
+
     <TextView
         android:id="@+id/status"
         android:layout_width="match_parent"
@@ -93,6 +157,7 @@
         android:textSize="16sp" />
 
     <LinearLayout
+        android:id="@+id/optionsRow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"

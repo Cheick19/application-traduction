@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.ClipData
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -21,6 +22,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.cheick.traduction.databinding.ActivityMainBinding
@@ -75,6 +77,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var conversation: Conversation
 
     private val prefs by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
+
+    /** Call mode: this device sits next to a phone on speaker and translates the call. */
+    private var callMode = false
+    private var savedVolume = -1
 
     private val myLanguage get() = Language.ALL[binding.myLanguage.selectedItemPosition]
     private val otherLanguage get() = Language.ALL[binding.otherLanguage.selectedItemPosition]
@@ -137,6 +143,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.action_speed -> chooseVoiceSpeed()
                 R.id.action_end_mode -> chooseEndMode()
                 R.id.action_recognition -> chooseRecognition()
+                R.id.action_call_mode -> if (callMode) exitCallMode() else showCallGuide()
             }
             true
         }
@@ -598,19 +605,22 @@ class MainActivity : AppCompatActivity() {
                     } else if (segments.isNotEmpty()) {
                         finishTurn()
                     } else {
-                        listeningFor = null
-                        updateButtons()
-                        setStatus("${getString(R.string.not_understood)} (code $error)")
+                        endTurnWithError(error)
                     }
                 else -> if (segments.isNotEmpty()) {
                     finishTurn()
                 } else {
-                    listeningFor = null
-                    updateButtons()
-                    setStatus("${getString(R.string.not_understood)} (code $error)")
+                    endTurnWithError(error)
                 }
             }
         }
+    }
+
+    private fun endTurnWithError(error: Int) {
+        listeningFor = null
+        updateButtons()
+        setStatus("${getString(R.string.not_understood)} (code $error)")
+        if (callMode) handler.postDelayed({ if (callMode && isInForeground()) startListening(Speaker.OTHER) }, 1000)
     }
 
     /** A recognizer session ended at a pause: keep listening, and send only after a real pause. */
@@ -636,6 +646,7 @@ class MainActivity : AppCompatActivity() {
             if (task.isSuccessful && listeningFor == speaker) {
                 partialResult = text to task.result
                 showLiveText()
+                if (callMode) showCallText(speaker, text, task.result)
             }
             val next = queuedPartial
             queuedPartial = null
@@ -644,7 +655,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onNothingHeard(speaker: Speaker) {
-        if (binding.conversationMode.isChecked && isInForeground()) {
+        if (callMode && isInForeground()) {
+            // In a call, always go back to listening to the other person.
+            handler.postDelayed({ startListening(Speaker.OTHER) }, 100)
+        } else if (binding.conversationMode.isChecked && isInForeground()) {
             // Keep waiting for the same person in conversation mode.
             handler.postDelayed({ startListening(speaker) }, 100)
         } else if (binding.status.text.toString() != getString(R.string.too_noisy)) {
@@ -657,6 +671,7 @@ class MainActivity : AppCompatActivity() {
         val target = if (speaker == Speaker.ME) otherLanguage else myLanguage
         val onTranslated = { translated: String ->
             addMessage(Message(speaker == Speaker.ME, text, translated, source, target))
+            if (callMode) showCallText(speaker, text, translated)
             setStatus("🔊 $translated")
             speak(translated, target, speaker)
         }
@@ -699,6 +714,80 @@ class MainActivity : AppCompatActivity() {
 
     // endregion
 
+    // region Call mode
+
+    private fun showCallGuide() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.call_mode)
+            .setMessage(getString(R.string.call_guide, myLanguage.label))
+            .setPositiveButton(R.string.call_start) { _, _ -> enterCallMode() }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun enterCallMode() {
+        callMode = true
+        binding.callReadAloud.isChecked = prefs.getBoolean("callReadAloud", false)
+        binding.callReadAloud.setOnCheckedChangeListener { _, checked ->
+            prefs.edit().putBoolean("callReadAloud", checked).apply()
+        }
+        binding.callLabel.text = getString(R.string.call_they_say, otherLanguage.label, myLanguage.label)
+        binding.callSubtitle.text = getString(R.string.call_waiting)
+        binding.callOriginal.text = ""
+        binding.callMine.text = ""
+        updateCallModeViews()
+        raiseVolume()
+        startListening(Speaker.OTHER)
+    }
+
+    private fun exitCallMode() {
+        callMode = false
+        stopListening()
+        restoreVolume()
+        updateCallModeViews()
+    }
+
+    private fun updateCallModeViews() {
+        binding.languageRow.isVisible = !callMode
+        binding.messages.isVisible = !callMode
+        binding.optionsRow.isVisible = !callMode
+        binding.callPanel.isVisible = callMode
+        binding.toolbar.title = getString(if (callMode) R.string.call_mode else R.string.app_name)
+        binding.toolbar.menu.findItem(R.id.action_call_mode)?.apply {
+            setIcon(if (callMode) R.drawable.ic_call_end else R.drawable.ic_call)
+            title = getString(if (callMode) R.string.call_mode_exit else R.string.call_mode)
+        }
+        if (!callMode && adapter.itemCount > 0) binding.messages.scrollToPosition(adapter.itemCount - 1)
+    }
+
+    /** Shows the latest sentence of the call in large print. */
+    private fun showCallText(speaker: Speaker, original: String, translated: String) {
+        if (speaker == Speaker.OTHER) {
+            binding.callSubtitle.text = translated
+            binding.callOriginal.text = original
+        } else {
+            binding.callMine.text = getString(R.string.call_you_said, otherLanguage.label, translated)
+        }
+    }
+
+    /** The translation of what I say must be loud enough for the phone's microphone to pick it up. */
+    private fun raiseVolume() {
+        val audio = getSystemService(AudioManager::class.java) ?: return
+        runCatching {
+            if (savedVolume < 0) savedVolume = audio.getStreamVolume(AudioManager.STREAM_MUSIC)
+            audio.setStreamVolume(AudioManager.STREAM_MUSIC, audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0)
+        }
+    }
+
+    private fun restoreVolume() {
+        if (savedVolume < 0) return
+        val audio = getSystemService(AudioManager::class.java)
+        runCatching { audio?.setStreamVolume(AudioManager.STREAM_MUSIC, savedVolume, 0) }
+        savedVolume = -1
+    }
+
+    // endregion
+
     // region Text to speech
 
     /**
@@ -706,6 +795,11 @@ class MainActivity : AppCompatActivity() {
      * once the voice has finished (conversation mode).
      */
     private fun speak(text: String, language: Language, after: Speaker?) {
+        if (callMode && after == Speaker.OTHER && !binding.callReadAloud.isChecked) {
+            // Subtitles only, so the other person does not hear the translation through the call.
+            onTurnFinished(after)
+            return
+        }
         val channel = when (language) {
             myLanguage -> myVoice
             otherLanguage -> otherVoice
@@ -725,7 +819,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onTurnFinished(speaker: Speaker) {
-        if (binding.conversationMode.isChecked && isInForeground() && listeningFor == null) {
+        if (callMode && isInForeground() && listeningFor == null) {
+            startListening(Speaker.OTHER)
+        } else if (binding.conversationMode.isChecked && isInForeground() && listeningFor == null) {
             // Hand over to the other person.
             startListening(if (speaker == Speaker.ME) Speaker.OTHER else Speaker.ME)
         } else if (listeningFor == null) {
@@ -813,8 +909,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun toast(text: String) = Toast.makeText(this, text, Toast.LENGTH_SHORT).show()
 
+    override fun onResume() {
+        super.onResume()
+        val micAllowed = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        if (callMode && listeningFor == null && micAllowed) {
+            raiseVolume()
+            startListening(Speaker.OTHER)
+        }
+    }
+
     override fun onStop() {
         super.onStop()
+        if (callMode) restoreVolume()
         stopListening()
         myVoice.stop()
         otherVoice.stop()
