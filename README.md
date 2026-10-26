@@ -29,7 +29,7 @@ Ensuite la traduction fonctionne même **hors ligne**.
 | ✏️ sur une bulle | Corriger une traduction : l'appli s'en souvient pour la suite |
 | ＋ (en haut) | Nouvelle discussion (l'ancienne reste enregistrée) |
 | 🕘 (en haut) | Discussions enregistrées : ouvrir, partager ou supprimer |
-| Menu ⋮ | Partager la discussion, ce que l'appli a appris, ajouter un mot / nom, vitesse de la voix |
+| Menu ⋮ | Partager la discussion, ce que l'appli a appris, ajouter un mot / nom, **choisir la voix** (homme/femme, pour chaque langue), ton de la voix, vitesse de la voix |
 
 Appuyez une deuxième fois sur le micro actif pour terminer la phrase tout de suite.
 

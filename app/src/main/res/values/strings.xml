@@ -67,4 +67,17 @@
     <string name="call_waiting">En attente de votre interlocuteur…</string>
     <string name="call_you_said">Vous (→ %1$s) : %2$s</string>
     <string name="call_read_aloud">Lire aussi sa traduction à voix haute</string>
+    <string name="voice_choose">Choisir la voix</string>
+    <string name="voice_for">Voix en %1$s</string>
+    <string name="voice_pick_title">Voix en %1$s – touchez pour écouter</string>
+    <string name="voice_default">Voix par défaut du téléphone</string>
+    <string name="voice_number">Voix %1$d</string>
+    <string name="voice_network">Internet</string>
+    <string name="voice_saved">Voix enregistrée</string>
+    <string name="voice_more">Plus de voix…</string>
+    <string name="voice_none">Aucune voix installée pour cette langue. Touchez « Plus de voix… », puis dans le moteur de synthèse vocale (Google) installez les données vocales de cette langue.</string>
+    <string name="pitch">Ton de la voix</string>
+    <string name="pitch_low">Grave (plus masculin)</string>
+    <string name="pitch_normal">Normal</string>
+    <string name="pitch_high">Aigu</string>
 </resources>

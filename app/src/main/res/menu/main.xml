@@ -37,6 +37,14 @@
         android:title="@string/recognition"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_voice"
+        android:title="@string/voice_choose"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_pitch"
+        android:title="@string/pitch"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_speed"
         android:title="@string/voice_speed"
         app:showAsAction="never" />

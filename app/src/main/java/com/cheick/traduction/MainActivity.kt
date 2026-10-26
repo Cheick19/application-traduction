@@ -12,6 +12,7 @@ import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.speech.tts.Voice
 import android.text.InputType
 import android.view.View
 import android.widget.AdapterView
@@ -37,6 +38,7 @@ import com.google.mlkit.nl.translate.TranslatorOptions
 import java.io.File
 import java.text.DateFormat
 import java.util.Date
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
@@ -98,10 +100,11 @@ class MainActivity : AppCompatActivity() {
 
         store = ConversationStore(this)
         memory = LearningMemory(this)
-        voiceExporter = VoiceExporter(this)
+        voiceExporter = VoiceExporter(this, ::chosenVoice) { prefs.getFloat("pitch", 1f) }
         val rate = prefs.getFloat("rate", 1.2f)
-        myVoice = VoiceChannel(this, ::onUtteranceFinished).also { it.rate = rate }
-        otherVoice = VoiceChannel(this, ::onUtteranceFinished).also { it.rate = rate }
+        val pitch = prefs.getFloat("pitch", 1f)
+        myVoice = VoiceChannel(this, ::chosenVoice, ::onUtteranceFinished).also { it.rate = rate; it.pitch = pitch }
+        otherVoice = VoiceChannel(this, ::chosenVoice, ::onUtteranceFinished).also { it.rate = rate; it.pitch = pitch }
 
         adapter = MessageAdapter(
             onReplay = { message -> speak(message.translation, message.target, null) },
@@ -141,6 +144,8 @@ class MainActivity : AppCompatActivity() {
                 R.id.action_memory -> showMemory()
                 R.id.action_add_term -> addTerm()
                 R.id.action_speed -> chooseVoiceSpeed()
+                R.id.action_voice -> chooseVoiceLanguage()
+                R.id.action_pitch -> choosePitch()
                 R.id.action_end_mode -> chooseEndMode()
                 R.id.action_recognition -> chooseRecognition()
                 R.id.action_call_mode -> if (callMode) exitCallMode() else showCallGuide()
@@ -301,6 +306,79 @@ class MainActivity : AppCompatActivity() {
                 myVoice.rate = rates[which]
                 otherVoice.rate = rates[which]
                 prefs.edit().putFloat("rate", rates[which]).apply()
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    private fun chosenVoice(language: Language): String? = prefs.getString("voice_${language.mlKitCode}", null)
+
+    private fun chooseVoiceLanguage() {
+        val languages = listOf(myLanguage, otherLanguage).distinct()
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.voice_choose)
+            .setItems(languages.map { getString(R.string.voice_for, it.label) }.toTypedArray()) { _, which ->
+                chooseVoice(languages[which])
+            }
+            .show()
+    }
+
+    private fun chooseVoice(language: Language) {
+        val channel = if (language == myLanguage) myVoice else otherVoice
+        val voices = channel.voicesFor(language)
+        if (voices.isEmpty()) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle(getString(R.string.voice_for, language.label))
+                .setMessage(R.string.voice_none)
+                .setPositiveButton(R.string.voice_more) { _, _ -> openTtsSettings() }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
+            return
+        }
+        val labels = listOf(getString(R.string.voice_default)) + voices.mapIndexed { i, voice -> voiceLabel(i, voice) }
+        var selected = voices.indexOfFirst { it.name == chosenVoice(language) } + 1
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.voice_pick_title, language.label))
+            .setSingleChoiceItems(labels.toTypedArray(), selected) { _, which ->
+                selected = which
+                channel.preview(language, voices.getOrNull(which - 1))
+            }
+            .setPositiveButton(R.string.save) { _, _ ->
+                val key = "voice_${language.mlKitCode}"
+                if (selected == 0) prefs.edit().remove(key).apply() else prefs.edit().putString(key, voices[selected - 1].name).apply()
+                myVoice.invalidate()
+                otherVoice.invalidate()
+                toast(getString(R.string.voice_saved))
+            }
+            .setNeutralButton(R.string.voice_more) { _, _ -> openTtsSettings() }
+            .setNegativeButton(R.string.cancel) { _, _ -> channel.invalidate() }
+            .show()
+    }
+
+    private fun voiceLabel(index: Int, voice: Voice): String {
+        val country = voice.locale.getDisplayCountry(Locale.FRENCH)
+        // Google voice names look like "fr-fr-x-frd-local": keep the short id to tell them apart.
+        val id = voice.name.substringAfter("-x-", "").substringBefore('-').ifEmpty { voice.name }
+        val network = if (voice.isNetworkConnectionRequired) " · ${getString(R.string.voice_network)}" else ""
+        return "${getString(R.string.voice_number, index + 1)}" + (if (country.isNotBlank()) " · $country" else "") + " · $id$network"
+    }
+
+    private fun openTtsSettings() {
+        runCatching { startActivity(Intent("com.android.settings.TTS_SETTINGS")) }
+            .onFailure { runCatching { startActivity(Intent(android.provider.Settings.ACTION_SETTINGS)) } }
+    }
+
+    private fun choosePitch() {
+        val pitches = floatArrayOf(0.75f, 1.0f, 1.25f)
+        val labels = arrayOf(getString(R.string.pitch_low), getString(R.string.pitch_normal), getString(R.string.pitch_high))
+        val current = pitches.indexOfFirst { it == myVoice.pitch }.coerceAtLeast(1)
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.pitch)
+            .setSingleChoiceItems(labels, current) { dialog, which ->
+                myVoice.pitch = pitches[which]
+                otherVoice.pitch = pitches[which]
+                prefs.edit().putFloat("pitch", pitches[which]).apply()
+                speak(myLanguage.sample, myLanguage, null)
                 dialog.dismiss()
             }
             .show()

@@ -13,7 +13,11 @@ import java.util.concurrent.Executors
  * Turns a translation into an audio file (voice message) that can be shared to WhatsApp & co.
  * Uses its own TextToSpeech instance so it never interferes with the live conversation.
  */
-class VoiceExporter(context: Context) {
+class VoiceExporter(
+    context: Context,
+    private val chosenVoice: (Language) -> String?,
+    private val pitch: () -> Float,
+) {
 
     private class Pending(val wav: File, val callback: (File?) -> Unit)
 
@@ -51,10 +55,8 @@ class VoiceExporter(context: Context) {
 
     private fun synthesize(text: String, language: Language, callback: (File?) -> Unit) {
         if (ready != true) return callback(null)
-        val result = tts.setLanguage(language.locale)
-        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-            return callback(null)
-        }
+        if (!VoiceChannel.selectVoice(tts, language, chosenVoice(language))) return callback(null)
+        tts.setPitch(pitch())
         val dir = File(appContext.cacheDir, "shared").apply { mkdirs() }
         // Remove voice messages from previous sessions.
         val oneHourAgo = System.currentTimeMillis() - 3_600_000
